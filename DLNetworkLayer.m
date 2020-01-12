@@ -75,7 +75,7 @@ classdef DLNetworkLayer < matlab.mixin.Copyable
                         obj.initgain = 1;
                     case 'linear'
                         obj.nlfun = @(x) x;
-                        obj.nlfunprime = @(y) y;
+                        obj.nlfunprime = @(y) 1;
                         obj.initgain = 1;
                     otherwise
                         obj.nlfun = opt{1}; %user-defined
