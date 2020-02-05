@@ -1,10 +1,12 @@
-function stepBackward(N, l, LRATE, MOMENTUM, WDECAY)
+function stepBackward(N, l, LRATE, MOMENTUM, WDECAY, UPDATE)
 %STEPBACKWARD performs back propagation for the current network layer
 %   N is the network (array of pointers to structs)
 %   l is the layer to perform the forward step
 %   LRATE is the current learning rate
 %   MOMENTUM (optional parameter)
 %   WDECAY (optional parameter) - weight decay (as a fraction of LRATE)
+%   UPDATE (optional parameter) - (0) accumulate gradient | (1) update the
+%                                 weights (training in batches)
 %
 %   Sergey Shuvaev, 2016. sshuvaev@cshl.edu
 
@@ -16,6 +18,9 @@ if nargin < 5
     MOMENTUM = 0;   % momentum (typical value: 0.9)
     WDECAY = 0;     % weight decay (typical value: 1e-3
 end
+if nargin < 6
+    UPDATE = 1;     % default: update the weights
+end
 cL = N(l);      % current layer. okay since N is a reference array
 pL = N(l - 1);  % previous layer (next for backprop)
 
@@ -26,19 +31,22 @@ switch(cL.type)
         if l ~= 2 %delta
             pL.delta(:) = (cL.w' * cL.delta(:)) .* cL.nlfunprime(pL.y(:));
         end
-        cL.gw = cL.delta(:) * pL.y(:)'; %gragient (weight part)
-        cL.gb = cL.delta(:);       %gradient (bias part)
+        cL.gw = cL.gw + cL.delta(:) * pL.y(:)'; %gragient (weight part)
+        cL.gb = cL.gb + cL.delta(:);            %gradient (bias part)
         
-        cL.vw = MOMENTUM * cL.vw - WDECAY * LRATE * cL.w + LRATE * cL.gw; %Gradient descent
-        cL.vb = MOMENTUM * cL.vb - WDECAY * LRATE * cL.b + LRATE * cL.gb;
-        
-        cL.w = cL.w - cL.vw; %Stochastic gradient descent
-        cL.b = cL.b - cL.vb;
+        if UPDATE
+            cL.vw = MOMENTUM * cL.vw - WDECAY * LRATE * cL.w + LRATE * cL.gw;
+            cL.vb = MOMENTUM * cL.vb - WDECAY * LRATE * cL.b + LRATE * cL.gb;
+
+            cL.w = cL.w - cL.vw; %Stochastic gradient descent
+            cL.b = cL.b - cL.vb;
+            
+            cL.gw = 0 * cL.gw;
+            cL.gb = 0 * cL.gb;
+        end
         
     case 'conv'
         
-        cL.gw = 0 * cL.gw; %Make zero since value may be accumulated in case of minibatch
-        cL.gb = 0 * cL.gb;
         pL.delta = 0 * pL.delta;
         
         for j = 1 : size(cL.w, 4)
@@ -55,11 +63,16 @@ switch(cL.type)
             cL.gb(j) = cL.gb(j) + sum(cnv_bias(:)); %gradient (bias part)
         end
         
-        cL.vw = MOMENTUM * cL.vw - WDECAY * LRATE * cL.w + LRATE * cL.gw; %Gradient descent
-        cL.vb = MOMENTUM * cL.vb - WDECAY * LRATE * cL.b + LRATE * cL.gb;
-        
-        cL.w = cL.w - cL.vw; %Stochastic gradient descent
-        cL.b = cL.b - cL.vb;
+        if UPDATE
+            cL.vw = MOMENTUM * cL.vw - WDECAY * LRATE * cL.w + LRATE * cL.gw;
+            cL.vb = MOMENTUM * cL.vb - WDECAY * LRATE * cL.b + LRATE * cL.gb;
+
+            cL.w = cL.w - cL.vw; %Stochastic gradient descent
+            cL.b = cL.b - cL.vb;
+            
+            cL.gw = 0 * cL.gw;
+            cL.gb = 0 * cL.gb;
+        end
         
     case 'maxpool'
         
