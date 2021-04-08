@@ -179,6 +179,17 @@ classdef DLNetworkLayer < matlab.mixin.Copyable
             label = label - 1;
         end
         
+        function strip(obj)
+            obj.y = [];
+            obj.delta = [];
+            obj.gw = [];
+            obj.gb = [];
+            obj.vw = [];
+            obj.vb = [];
+            obj.CI = [];
+            obj.MI = [];
+        end
+        
         %Defining remaining parameters if needed. Nothing interesting beyond this point
         
         function defineConv(obj, pOutdim, nIndim)
