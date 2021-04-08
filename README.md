@@ -1,5 +1,5 @@
 # DLNetwork
-Transparent deep learning package
+Transparent deep learning package. Aimed at prototyping network models in Matlab. Developed as a student project.
 
 `DLNetworkLayer.m` contains the description of the base class implementing a single deep network layer
 
